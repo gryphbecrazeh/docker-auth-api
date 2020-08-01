@@ -8,8 +8,6 @@ const jwt = require("jsonwebtoken");
 
 const jwtsecret = process.env.JWT_SECRET;
 
-const auth = require("../../middleware/auth");
-
 // User Model
 const User = require("../../models/User");
 
@@ -64,22 +62,6 @@ router.post("/", (req, frontEndRes) => {
 			);
 		});
 	});
-});
-
-// @route GET /user
-// @desc Get User data
-// @access Private
-router.get("/user", auth, (req, frontEndRes) => {
-	User.findById(req.user.id)
-		.select("-password")
-		.then((user) => frontEndRes.json(user))
-		.catch((err) =>
-			frontEndRes.status(400).json({
-				err: true,
-				msg: "User data not found...",
-				success: false,
-			})
-		);
 });
 
 module.exports = router;

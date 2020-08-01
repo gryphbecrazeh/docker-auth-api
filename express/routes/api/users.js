@@ -11,10 +11,13 @@ const jwtsecret = process.env.JWT_SECRET;
 // User Model
 const User = require("../../models/User");
 
+// Auth middleware
+const auth = require("../../middleware/auth");
+
 // @route GET /users
 // @desc Get all USERS
 // @access PUBLIC
-router.get("/", (req, frontEndRes) => {
+router.get("/", auth, (req, frontEndRes) => {
 	return User.find()
 		.sort({ date: -1 })
 		.then((users) =>
@@ -36,7 +39,7 @@ router.get("/", (req, frontEndRes) => {
 // @route DELETE /users:ID
 // @desc Delete a User
 // @access PUBLIC
-router.delete("/:id", (req, frontEndRes) => {
+router.delete("/:id", auth, (req, frontEndRes) => {
 	return User.findById(req.params.id).then((user) => {
 		user
 			.remove()
@@ -60,7 +63,7 @@ router.delete("/:id", (req, frontEndRes) => {
 // @route PUT /users:id
 // @desc Edit user
 // @access PUBLIC
-router.put("/:id", (req, frontEndRes) => {
+router.put("/:id", auth, (req, frontEndRes) => {
 	const { _id, name, email, password } = req.body;
 	let id = _id,
 		updatedUser = {

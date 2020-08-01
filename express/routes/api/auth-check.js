@@ -2,85 +2,72 @@ const express = require("express");
 
 const router = express.Router();
 
-const bcrypt = require("bcryptjs");
-
-const jwt = require("jsonwebtoken");
-
-const jwtsecret = process.env.JWT_SECRET;
-
 const auth = require("../../middleware/auth");
 
 // User Model
 const User = require("../../models/User");
 
-// @route POST /
-// @desc Authorize User
+// Cache Expires by default in 100 MINUTES
+let cacheExpire = process.env.CACHE_EXPIRE_MINS * 60000 || 100 * 60000;
+
+let cacheEnabled = process.env.CACHE_ENABLED || true;
+
+// Cache associative array, properties accessed by User ID
+const cache = [];
+
+const removeFromCache = async (user) => {
+	return await setTimeout(() => {
+		cache[user.id] = null;
+	}, cacheExpire);
+};
+
+const setCache = (user) => {
+	cache[user.id] = user;
+	return removeFromCache(user);
+};
+
+// @route POST /auth-check
+// @desc Check whether a user is valid
 // @access PUBLIC
-router.post("/", (req, frontEndRes) => {
+router.get("/", auth, (req, frontEndRes) => {
 	const { user } = req;
-	console.log("auth-check hit...");
 	// Super Simple Validation
 	if (!user) {
-		console.log("decode failed...");
 		return frontEndRes.status(400).json({
 			err: true,
-			msg: "An error has occurred in AUTH-CHECK...",
+			msg: "Token is not present in storage, or not valid...",
 			success: false,
 		});
 	}
-	console.log(user);
-	// Check Existing User
-	// User.findOne({ email: user }).then((user) => {
-	// 	if (!user) {
-	// 		return frontEndRes.status(400).json({
-	// 			err: true,
-	// 			msg: "User Not Found...",
-	// 			success: false,
-	// 		});
-	// 	}
-	// 	// Validate Password with BCrypt
-	// 	bcrypt.compare(password, user.password).then((isMatch) => {
-	// 		if (!isMatch) {
-	// 			return frontEndRes.status(400).json({
-	// 				err: true,
-	// 				msg: "Invalid Credentials",
-	// 				success: false,
-	// 			});
-	// 		}
-	// 		jwt.sign(
-	// 			{
-	// 				id: user.id,
-	// 			},
-	// 			jwtsecret,
-	// 			(err, token) => {
-	// 				if (err) throw err;
-	// 				delete user.password;
-	// 				frontEndRes.json({
-	// 					token,
-	// 					user: {
-	// 						...user._doc,
-	// 					},
-	// 				});
-	// 			}
-	// 		);
-	// 	});
-	// });
-});
+	if (!cache[user.id]) {
+		// Check Existing User
+		User.findOne({ name: user.name, email: user.email })
+			.then((user) => {
+				if (!user)
+					return frontEndRes
+						.status(400)
+						.json({ err: true, msg: "User not found...", success: false });
+				delete user.password;
 
-// @route GET /user
-// @desc Get User data
-// @access Private
-router.get("/user", auth, (req, frontEndRes) => {
-	User.findById(req.user.id)
-		.select("-password")
-		.then((user) => frontEndRes.json(user))
-		.catch((err) =>
-			frontEndRes.status(400).json({
-				err: true,
-				msg: "User data not found...",
-				success: false,
+				if (cacheEnabled) setCache(user);
+
+				return frontEndRes.status(200).json({
+					err: false,
+					msg: "User successfully validated...",
+					user: user,
+					success: true,
+				});
 			})
-		);
+			.catch((err) => {
+				return frontEndRes.status(400).json({
+					err: true,
+					msg:
+						"An error has occurred while attempting to search for the user...",
+					error: err,
+					success: false,
+				});
+			});
+	}
 });
 
 module.exports = router;
