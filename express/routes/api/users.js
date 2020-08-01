@@ -126,7 +126,6 @@ router.post("/", (req, frontEndRes) => {
 		email,
 		password: null,
 	});
-	console.log("posting request...", req.body);
 	// Really Simple Validation
 	if (!name || !email || !password) {
 		return frontEndRes.status(400).json({
@@ -162,8 +161,7 @@ router.post("/", (req, frontEndRes) => {
 								{ expiresIn: 3600 },
 								(signErr, token) => {
 									if (signErr) throw signErr;
-									console.log("User successfully created");
-									frontEndRes.status(200).json({
+									return frontEndRes.status(200).json({
 										err: false,
 										token: token,
 										user: {
@@ -178,7 +176,6 @@ router.post("/", (req, frontEndRes) => {
 							);
 						})
 						.catch((err) => {
-							console.log(err);
 							return frontEndRes.status(400).json({
 								err: true,
 								msg: "Saving error",
@@ -190,8 +187,7 @@ router.post("/", (req, frontEndRes) => {
 			});
 		})
 		.catch((err) => {
-			console.log(err);
-			frontEndRes.status(400).json({
+			return frontEndRes.status(400).json({
 				err: true,
 				msg: "Error in updating database...",
 				error: err,
