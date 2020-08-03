@@ -27,7 +27,7 @@ router.post("/", (req, frontEndRes) => {
 	}
 
 	// Check Existing User
-	User.findOne({ email: user }).then((user) => {
+	User.findOne({ $or: [{ user }, { email: user }] }).then((user) => {
 		if (!user) {
 			return frontEndRes.status(400).json({
 				err: true,
@@ -51,11 +51,12 @@ router.post("/", (req, frontEndRes) => {
 				jwtsecret,
 				(err, token) => {
 					if (err) throw err;
+
 					delete user.password;
 					frontEndRes.json({
 						token,
 						user: {
-							...user._doc,
+							...user,
 						},
 					});
 				}

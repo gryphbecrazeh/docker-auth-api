@@ -22,6 +22,7 @@ const removeFromCache = async (user) => {
 };
 
 const setCache = (user) => {
+	delete user.password;
 	cache[user.id] = user;
 	return removeFromCache(user);
 };
@@ -30,23 +31,24 @@ const setCache = (user) => {
 // @desc Check whether a user is valid
 // @access PUBLIC
 router.get("/", auth, (req, frontEndRes) => {
-	const { user } = req;
+	const { id } = req;
 	// Super Simple Validation
-	if (!user) {
+	if (!id) {
 		return frontEndRes.status(400).json({
 			err: true,
 			msg: "Token is not present in storage, or not valid...",
 			success: false,
 		});
 	}
-	if (!cache[user.id]) {
+	if (!cache[id]) {
 		// Check Existing User
-		User.findOne({ name: user.name, email: user.email })
+		return User.findById(id)
 			.then((user) => {
 				if (!user)
 					return frontEndRes
 						.status(400)
 						.json({ err: true, msg: "User not found...", success: false });
+
 				delete user.password;
 
 				if (cacheEnabled) setCache(user);
@@ -68,6 +70,12 @@ router.get("/", auth, (req, frontEndRes) => {
 				});
 			});
 	}
+	return frontEndRes.status(200).json({
+		err: false,
+		msg: "User successfully validated...",
+		user: cache[id],
+		success: true,
+	});
 });
 
 module.exports = router;

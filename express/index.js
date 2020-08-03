@@ -33,6 +33,6 @@ mongoose
 // USE ROUTES
 app.use("/auth-check", require("./routes/api/auth-check"));
 app.use("/users", require("./routes/api/users"));
-app.use("/", require("./routes/api/auth"));
+app.use("/authenticate", require("./routes/api/auth"));
 
 app.listen(port, () => console.log(`Server is running on ${port}...`));

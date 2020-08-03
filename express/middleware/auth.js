@@ -3,7 +3,6 @@ const jwtSecret = process.env.JWT_SECRET;
 
 function auth(req, res, next) {
 	const token = req.header("x-auth-token");
-
 	// Check for token
 	if (!token)
 		return res.status(401).json({
@@ -14,14 +13,13 @@ function auth(req, res, next) {
 	try {
 		// Verify token
 		const decoded = jwt.verify(token, jwtSecret);
-
 		// Add user from payload
-		req.user = decoded;
+		req.id = decoded.id;
 		return next();
 	} catch (e) {
 		res
 			.status(400)
-			.json({ err: true, msg: "Token is not valid", success: false });
+			.json({ err: true, msg: "Token is not valid...", success: false });
 	}
 }
 
